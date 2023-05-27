@@ -63,7 +63,7 @@ torch.manual_seed(seed)
 data = KDE_NPP_data_generator(model, batch_size, seq_len)
 ```
 
-2. Generation learned by variational learning:
+2. Generator learned by variational learning:
 ```python
 from VAE_CEG import NeuralPP
 from sampling import VAE_NPP_data_generator
