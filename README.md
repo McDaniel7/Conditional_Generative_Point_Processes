@@ -12,10 +12,9 @@ Recent advancements in generative modeling have made it possible to generate hig
 
 ## Usage
 
-There are two critical files included in this repo: 
-
-- `stppg.py` includes basic generators for homogeneous and inhomogeneous univariate point process, as well as various types of intensity classes and kernel functions.
-- `utils.py` includes plotting functions for visualizing the point process simulation.
+- `generative_pp_KDE/KDE_CEG.py` defines the genrative point process learned through non-parametric learning.
+- `generative_pp_VAE/VAE_CEG.py` defines the genrative point process learned through variational learning.
+- `sampling.py` includes the efficient sequential event generation using our generative point process.
 
 ### Examples
 
