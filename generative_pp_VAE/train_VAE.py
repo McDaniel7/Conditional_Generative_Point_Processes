@@ -23,8 +23,9 @@ from torch.optim import Adam
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
-from KDE_CEG import NeuralPP
+from VAE_CEG import NeuralPP
 
+# Training
 
 def train(config, model_name, save_path):
 
@@ -36,8 +37,8 @@ def train(config, model_name, save_path):
 
     # Load data and separate them as training/testing set
     data         = torch.Tensor(np.load(config['data_path']))
-    if config['data_dim'] == 1:
-        data         = data.unsqueeze(-1)
+    if config["data_dim"] == 1: data = data.unsqueeze(-1)
+    data         = data[:, :150, :]
     train_loader = DataLoader(torch.utils.data.TensorDataset(data[:config['train_size']]), 
                               shuffle=True, batch_size=config['batch_size'], drop_last=True)
     test_loader  = DataLoader(torch.utils.data.TensorDataset(data[config['train_size']:]), 
@@ -47,23 +48,18 @@ def train(config, model_name, save_path):
     seq_len           = data.shape[1]
     config['seq_len'] = seq_len
 
-    # set adaptive bandwidth
-    kde_bdw_base = torch.Tensor(config['kde_bdw_base']).to(config['device'])
-    kde_bdw_decay = config['kde_bdw_decay']
-
     # initialize model
     model        = NeuralPP(config)
     if config['warm_start']:
         print("Warm start. Loading model...")
         model.load_state_dict(torch.load(config['warm_path']))
-        # model.kde_bdw.data = torch.Tensor([0.5])[0]
     model.to(config['device'])
 
     # initialize optimizer
     optimizer    = Adam(model.parameters(), lr=config["lr"])
     
     # iteration
-    avg_nll, avg_test_nll = [], []
+    avg_loss, avg_test_loss = [], []
     n_events_train, n_events_test = 0, 0
     for epoch in range(config['epochs']):
         try:
@@ -74,12 +70,11 @@ def train(config, model_name, save_path):
                 optimizer.zero_grad()     
                 # negative log-likelihood
                 X         = batch[0].to(config["device"])
-                ll, n_events, _, _  = model.log_liklihood(X)
-                nll       = - ll
-                avg_nll.append(nll.item())
+                loss, n_events, _  = model.log_liklihood(X)
+                avg_loss.append(loss.item())
                 n_events_train += n_events
                 # optimize
-                nll.backward()             
+                loss.backward()             
                 optimizer.step()
 
                 for para in model.parameters():
@@ -90,16 +85,15 @@ def train(config, model_name, save_path):
             with torch.no_grad():
                 for batch in test_loader:
                     test_X        = batch[0].to(config["device"])
-                    test_ll, n_events, _, _ = model.log_liklihood(test_X)
-                    test_nll      = - test_ll
-                    avg_test_nll.append(test_nll.item())
+                    test_loss, n_events, _ = model.log_liklihood(test_X)
+                    avg_test_loss.append(test_loss.item())
                     n_events_test += n_events
 
             if (epoch + 1) % config['prt_evry'] == 0:
                 print("Epochs:%d" % epoch)
-                print("training nll:%.3e" % (sum(avg_nll) / n_events_train))
-                print("testing nll:%.3e" % (sum(avg_test_nll) / n_events_test))
-                avg_nll, avg_test_nll = [], []
+                print("training loss:%.3e" % np.mean(avg_loss))
+                print("testing loss:%.3e" % np.mean(avg_test_loss))
+                avg_loss, avg_test_loss = [], []
 
             if (epoch + 1) % config['log_iter'] == 0:
                 print("Saving model...")
@@ -108,9 +102,6 @@ def train(config, model_name, save_path):
                 model.to(config['device'])
 
             n_events_train, n_events_test = 0, 0
-            # adaptive bandwidth
-            model.kde_bdw.data = (model.kde_bdw.data - kde_bdw_base) * kde_bdw_decay + kde_bdw_base
-            print("Model bandwidth: ", model.kde_bdw.data.cpu().numpy())
             
         except KeyboardInterrupt:
             break
@@ -121,37 +112,36 @@ def train(config, model_name, save_path):
 seed = 100
 torch.manual_seed(seed)
 
-data_load = "data-1d-Exp-train-mu0.5-beta1.0-size120-n1000"
+data_load = "data-1d-SelfCorrecting-train-mu1.0-alpha1.0-size150-n1000"
 data_path = "data/%s.npy" % data_load
 train_size = 900
+mlp_layer = 1
+mlp_dim   = 2048
+noise_dim = 32
+hid_dim   = 32
 
-model_name = "%s_npp" % (data_load + "-RefKDE-dym-bdw-z0.2")
+model_name = "%s_npp" % (data_load + "-CVAE-layer%d-mlp%d-embed%d-hid%d_xavier" % (mlp_layer, mlp_dim, noise_dim, hid_dim))
 save_path = "saved_models/%s" % model_name
-warm_path = "saved_models/%s_stage1/%s-%d.pth" % (model_name, model_name, 199)
+warm_path = "saved_models/%s_stage1/%s-%d.pth" % (model_name, model_name, 99)
 
 train_config = {
-    'data': 'self-correcting_hawkes',
+    'data': 'self-correcting',
     'data_path': data_path,
     'train_size': train_size,
     'data_dim': 1,
-    'hid_dim': 32,
-    'mlp_layer': 2,
-    'kde_bdw':[.2],
-    'kde_bdw_base':[0.05],
-    'kde_bdw_decay':0.9,
-    'n_samples': 1000,
-    'noise_dim': 10,
-    'mlp_dim': 32,
-    'batch_size':32,
+    'hid_dim': hid_dim,
+    'noise_dim': noise_dim,
+    'mlp_dim': mlp_dim,
+    'mlp_layer': mlp_layer,
+    'batch_size':100,
     'epochs': 200,
     'lr': 1e-3,
-    'dropout': 0.1,
     'prt_evry':1,
     'early_stop': False,
     'alpha': 0.05,
     'log_mode': False,
     'log_iter': 5,
-    'warm_start': False,
+    'warm_start': True,
     'warm_path': warm_path,
     'device': torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 }
