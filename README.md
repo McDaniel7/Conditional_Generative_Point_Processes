@@ -1,6 +1,6 @@
-# Conditional Generative Modeling is All You Need for Marked Temporal Point Processes
+# Conditional Generative Modeling for High-dimensional Marked Temporal Point Processes
 
-Recent advancements in generative modeling have made it possible to generate high-quality content from context information, but a key question remains: how to teach models to know when to generate content? To answer this question, this study proposes a novel event generative model that draws its statistical intuition from marked temporal point processes, and offers a clean, flexible, and computationally efficient solution for a wide range of applications involving multi-dimensional marks. We aim to capture the distribution of the point process without explicitly specifying the conditional intensity or probability density. Instead, we use a conditional generator that takes the history of events as input and generates the high-quality subsequent event that is likely to occur given the prior observations. The proposed framework offers a host of benefits, including exceptional efficiency in learning the model and generating samples, as well as considerable representational power to capture intricate dynamics in multi- or even high-dimensional event space. Our numerical results demonstrate superior performance compared to other state-of-the-art baselines.
+Point processes offer a versatile framework for sequential event modeling. However, the computational challenges and constrained representational power of the existing point process models have impeded their potential for wider applications. This limitation becomes especially pronounced when dealing with event data that is associated with multi-dimensional or high-dimensional marks, such as texts or images. To address this challenge, this study proposes a novel event-generation framework for modeling point processes with high-dimensional marks. We aim to capture the distribution of events without explicitly specifying the conditional intensity or probability density function. Instead, we use a conditional generator that takes the history of events as input and generates the high-quality subsequent event that is likely to occur given the prior observations. The proposed framework offers a host of benefits, including considerable representational power to capture intricate dynamics in multi- or even high-dimensional event space, as well as exceptional efficiency in learning the model and generating samples. Our numerical results demonstrate superior performance compared to other state-of-the-art baselines.
 
 ## Model
 
@@ -12,8 +12,9 @@ Recent advancements in generative modeling have made it possible to generate hig
 
 ## Usage
 
-- `generative_pp_KDE/KDE_CEG.py` defines the genrative point process learned through non-parametric learning.
-- `generative_pp_VAE/VAE_CEG.py` defines the genrative point process learned through variational learning.
+- `generative_pp_KDE/KDE_CEG.py` defines the generative point process learned through non-parametric learning.
+- `generative_pp_VAE/VAE_CEG.py` defines the generative point process learned through variational learning.
+- `generative_pp_CDDM/CDDM_CEG.py` defines the generative point process learned through denoising diffusion.
 - `sampling.py` includes the efficient sequential event generation using our generative point process.
 
 ### Examples
