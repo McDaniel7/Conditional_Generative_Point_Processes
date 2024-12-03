@@ -105,7 +105,7 @@ data = VAE_NPP_data_generator(model, batch_size, seq_len)
 
 ```
 @article{dong2023conditional,
-  title={Conditional Generative Modeling is All You Need for Marked Temporal Point Processes},
+  title={Conditional Generative Modeling for High-dimensional Marked Temporal Point Processes},
   author={Dong, Zheng and Fan, Zekai and Zhu, Shixiang},
   journal={arXiv preprint arXiv:2305.12569},
   year={2023}
